@@ -22,9 +22,20 @@ namespace FindMyStuff.Api.Features.Items
 
     public class UpdateItemValidator : AbstractValidator<UpdateItemRequest>
     {
+        private readonly SqliteConnection _conn;
+
         public UpdateItemValidator()
         {
-            
+            _conn = new SqliteConnection(Constants.SQL_CONN);
+            RuleFor(x => x)
+                .MustAsync(MustExist);
+        }
+
+        private async Task<bool> MustExist(UpdateItemRequest request, CancellationToken token)
+        {
+            var sql = "select count(*) from Items where ItemId = @ItemId";
+            return (await _conn.QueryFirstOrDefaultAsync<int>(sql, request)) > 0;
+
         }
     }
 
@@ -32,7 +43,6 @@ namespace FindMyStuff.Api.Features.Items
     {
         [FromRoute]
         public string ItemId { get; set; } = string.Empty;
-
         [FromBody]
         public string Description { get; set; } = string.Empty;
         [FromBody]
@@ -41,7 +51,6 @@ namespace FindMyStuff.Api.Features.Items
 
     public class UpdateItemResponse 
     {
-
         public string ItemId { get; set; } = string.Empty;
     }
 
@@ -56,7 +65,6 @@ namespace FindMyStuff.Api.Features.Items
 
         public async Task<UpdateItemResponse> Handle(UpdateItemRequest request, CancellationToken cancellationToken)
         {
-
             var sql = @"
                 --sql
                 update Item set Name = @Name, Description = @Description where ItemId = @ItemId;
